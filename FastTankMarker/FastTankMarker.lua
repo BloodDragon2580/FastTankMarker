@@ -13,10 +13,15 @@ local function IsTank(unit)
     return UnitGroupRolesAssigned(unit) == "TANK"
 end
 
--- Function to mark tanks
+-- Function to mark tanks in 5-man groups only
 local function MarkTanks()
+    -- Check if we are in a raid group
+    if IsInRaid() then
+        return  -- Do nothing if the player is in a raid
+    end
+
     local numGroupMembers = GetNumGroupMembers()
-    local unitPrefix = IsInRaid() and "raid" or "party"
+    local unitPrefix = "party"  -- Use "party" prefix for normal groups
     local tankCount = 1  -- Counter for the tanks
 
     -- Loop through all group members
