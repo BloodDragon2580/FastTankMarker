@@ -1,8 +1,8 @@
-## Interface: 110205
+## Interface: 120000
 ## Title:|cffd6266cFastTankMarker|r
 ## Notes: Automatisches Markieren von bis zu drei Tanks mit unterschiedlichen Symbolen
 ## Author: BloodDragon2580
-## Version: 6.1
+## Version: 6.2
 ## IconTexture: Interface\AddOns\FastTankMarker\Media\Texture\logo
 
 FastTankMarker.lua
