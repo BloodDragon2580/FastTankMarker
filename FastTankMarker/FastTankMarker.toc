@@ -1,4 +1,4 @@
-## Interface: 120000
+## Interface: 120001
 ## Title:|cffd6266cFastTankMarker|r
 ## Notes: Automatisches Markieren von bis zu drei Tanks mit unterschiedlichen Symbolen
 ## Author: BloodDragon2580
