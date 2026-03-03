@@ -1,62 +1,55 @@
--- Initialize the addon
 local FastTankMarker = CreateFrame("Frame")
 
--- Define symbols for marking
 local MARKS = {
-    [1] = 6,  -- Blue Square (6)
-    [2] = 7,  -- Red Cross (7)
-    [3] = 4,  -- Green Triangle (4)
+    [1] = 6,
+    [2] = 7,
+    [3] = 4,
 }
 
-
-local pendingMark = false  -- defer marking until out of combat
-
--- Check if the player is a tank
 local function IsTank(unit)
     return UnitGroupRolesAssigned(unit) == "TANK"
 end
 
--- Function to mark tanks in 5-man groups only
+local function CanMark()
+    if not IsInGroup() then return false end
+    if IsInRaid() then return false end
+    if not UnitIsGroupLeader("player") then return false end
+    if InCombatLockdown() then return false end
+
+    local instanceType = select(2, IsInInstance())
+    if instanceType == "scenario" then
+        return false -- Delves / Szenarien ignorieren
+    end
+
+    return true
+end
+
 local function MarkTanks()
-    -- SetRaidTarget is protected during combat lockdown
-    if InCombatLockdown and InCombatLockdown() then
-        pendingMark = true
-        return
-    end
-    pendingMark = false
+    if not CanMark() then return end
 
-    -- Check if we are in a raid group
-    if IsInRaid and IsInRaid() then
-        return  -- Do nothing if the player is in a raid
-    end
+    local tankCount = 1
 
-    local tankCount = 1  -- Counter for the tanks
-
-    -- party1..party4 are the other members in a 5-man group
     for i = 1, 4 do
-        local unit = "party" .. i
-        if UnitExists(unit) and IsTank(unit) and not GetRaidTargetIndex(unit) then
-            -- Mark up to three tanks
+        local unit = "party"..i
+
+        -- Follower/Companion dungeons ("Anhänger") can populate party slots with NPC followers.
+        -- Trying to mark those units can trigger a "blocked" (protected) action warning.
+        -- Only mark real player units.
+        if UnitExists(unit) and UnitIsPlayer(unit) and IsTank(unit) and not GetRaidTargetIndex(unit) then
             if tankCount <= 3 then
-                SetRaidTarget(unit, MARKS[tankCount])
+                -- Be extra defensive: if the API is protected in the current context,
+                -- don't throw a blocked-action popup.
+                pcall(SetRaidTarget, unit, MARKS[tankCount])
                 tankCount = tankCount + 1
             end
         end
     end
 end
 
--- Event handler for when group members change
 FastTankMarker:RegisterEvent("GROUP_ROSTER_UPDATE")
-FastTankMarker:RegisterEvent("PLAYER_ENTERING_WORLD")
 FastTankMarker:RegisterEvent("PLAYER_REGEN_ENABLED")
+FastTankMarker:RegisterEvent("PLAYER_ENTERING_WORLD")
 
--- Execute the marking when events are triggered
-FastTankMarker:SetScript("OnEvent", function(self, event, ...)
-    if event == "PLAYER_REGEN_ENABLED" then
-        if pendingMark then
-            MarkTanks()
-        end
-        return
-    end
-    MarkTanks()
+FastTankMarker:SetScript("OnEvent", function(self, event)
+    C_Timer.After(1.5, MarkTanks)
 end)
